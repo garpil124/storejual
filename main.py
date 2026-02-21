@@ -154,64 +154,42 @@ async def handle_list_produk(update, context):
         reply_markup=reply_keyboard,
         parse_mode="Markdown"
     )
-
 # ===== HANDLE ORDER LANGSUNG =====
 async def handle_direct_order(update, context):
     query = update.callback_query
     user = query.from_user
 
+    await query.answer()
+
     text = (
         f"👋 Halo {user.full_name}!\n\n"
-        "Silakan tulis detail pesanan langsung ke admin.\n"
-        "Format contoh:\n"
-        "`Nama Produk - Jumlah - Keterangan lain`\n\n"
-        "Pesan kamu akan langsung dikirim ke admin."
+        "📝 *FORMAT ORDER*\n\n"
+        "Silakan copy format di bawah ini lalu kirim ke admin.\n\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Nama Produk :\n"
+        "Jumlah      :\n"
+        "Catatan     :\n"
+        "━━━━━━━━━━━━━━━━━━\n\n"
+        "📩 Klik tombol di bawah untuk langsung chat admin."
     )
 
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Kembali", callback_data="back_to_menu")]
+        [
+            InlineKeyboardButton(
+                "📩 PC Admin",
+                url="https://t.me/Brsik23"
+            )
+        ],
+        [
+            InlineKeyboardButton("🔙 Kembali", callback_data="back_to_menu")
+        ]
     ])
 
-    await query.message.delete()
-    await context.bot.send_message(
-        chat_id=user.id,
+    await query.message.reply_text(
         text=text,
         reply_markup=keyboard,
         parse_mode="Markdown"
     )
-
-    # simpan state agar pesan berikutnya diteruskan ke admin
-    context.user_data["direct_order"] = True
-
-# ===== FORWARD PESAN KE ADMIN =====
-ADMIN_USERNAME = "@Brsik23"  # username admin
-
-async def forward_direct_order(update, context):
-    user = update.message.from_user
-
-    # cek apakah user sedang di mode direct order
-    if context.user_data.get("direct_order"):
-        msg = update.message.text
-        await context.bot.send_message(
-            chat_id=ADMIN_USERNAME,
-            text=f"📨 Pesanan baru dari {user.full_name} (ID: {user.id}):\n{msg}"
-        )
-        await update.message.reply_text("✅ Pesanan kamu sudah dikirim ke admin.")
-
-        # hapus flag biar pesan berikutnya nggak otomatis diteruskan
-        context.user_data.pop("direct_order", None)
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Kembali", callback_data="back_to_menu")]
-    ])
-
-    await query.message.delete()
-    await context.bot.send_message(
-        chat_id=user.id,
-        text=text,
-        reply_markup=keyboard,
-        parse_mode="Markdown"
-    )
-
 async def handle_cek_stok(update, context):  # HANDLE CEK STOK
     query = update.callback_query
     produk = load_json(produk_file)
@@ -379,7 +357,7 @@ async def handle_admin_final(update, context): # HANDLE ADMIN FINAL
     item = next((p for p in pending if p["user_id"] == user_id), None)
     if item:
         nominal = item["nominal"]
-        saldo[str(user_id)] = saldo.get(str(user_id), 0) + nominal
+        saldo[str(user_id)] = saldo.get(ik str(user_id), 0) + nominal
         save_json(saldo_file, saldo)
         pending = [p for p in pending if p["user_id"] != user_id]
         save_json(deposit_file, pending)
@@ -646,21 +624,27 @@ async def button_callback(update: Update, context: CallbackContext):
 
     if data in load_json(produk_file):
         await handle_produk_detail(update, context)
+
+    elif data == "direct_order":   # ← TAMBAH INI
+        await handle_direct_order(update, context)
+
     elif data.startswith("deposit_"):
         await handle_deposit_nominal(update, context)
+
     elif data.startswith("confirm:"):
         await handle_admin_confirm(update, context)
+
     elif data.startswith("final:"):
         await handle_admin_final(update, context)
+
     elif data.startswith("reject:"):
         await handle_admin_reject(update, context)
+
     elif data in callback_handlers:
         await callback_handlers[data](update, context)
+
     else:
         await query.edit_message_text("❌ Aksi tidak dikenali.")
-
-async def start(update: Update, context: CallbackContext):
-    user = update.effective_user
 
     # KIRIM KE GRUP LOGS bahwa user baru buka bot
     await send_logs(
@@ -805,6 +789,7 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
 
 if __name__ == "__main__":
     main()
+
 
 
 
