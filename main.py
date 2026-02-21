@@ -357,7 +357,7 @@ async def handle_admin_final(update, context): # HANDLE ADMIN FINAL
     item = next((p for p in pending if p["user_id"] == user_id), None)
     if item:
         nominal = item["nominal"]
-        saldo[str(user_id)] = saldo.get(ik str(user_id), 0) + nominal
+        saldo[str(user_id)] = saldo.get(str(user_id), 0) + nominal
         save_json(saldo_file, saldo)
         pending = [p for p in pending if p["user_id"] != user_id]
         save_json(deposit_file, pending)
@@ -787,6 +787,7 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
 
 if __name__ == "__main__":
     main()
+
 
 
 
