@@ -646,6 +646,10 @@ async def button_callback(update: Update, context: CallbackContext):
     else:
         await query.edit_message_text("❌ Aksi tidak dikenali.")
 
+   async def start(update: Update, context: CallbackContext):
+    user = update.effective_user
+    await send_main_menu(context, update.effective_chat.id, user)
+ 
     # KIRIM KE GRUP LOGS bahwa user baru buka bot
     await send_logs(
         context,
@@ -787,6 +791,7 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
 
 if __name__ == "__main__":
     main()
+
 
 
 
