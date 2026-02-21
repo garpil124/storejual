@@ -624,29 +624,23 @@ async def button_callback(update: Update, context: CallbackContext):
 
     if data in load_json(produk_file):
         await handle_produk_detail(update, context)
-
-    elif data == "direct_order":   # ← TAMBAH INI
+    elif data == "direct_order":
         await handle_direct_order(update, context)
-
     elif data.startswith("deposit_"):
         await handle_deposit_nominal(update, context)
-
     elif data.startswith("confirm:"):
         await handle_admin_confirm(update, context)
-
     elif data.startswith("final:"):
         await handle_admin_final(update, context)
-
     elif data.startswith("reject:"):
         await handle_admin_reject(update, context)
-
     elif data in callback_handlers:
         await callback_handlers[data](update, context)
-
     else:
         await query.edit_message_text("❌ Aksi tidak dikenali.")
 
-   async def start(update: Update, context: CallbackContext):
+# ✅ HARUS PALING KIRI (tidak ada spasi)
+async def start(update: Update, context: CallbackContext):
     user = update.effective_user
     await send_main_menu(context, update.effective_chat.id, user)
  
@@ -791,6 +785,7 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
 
 if __name__ == "__main__":
     main()
+
 
 
 
