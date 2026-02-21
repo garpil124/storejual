@@ -125,33 +125,39 @@ async def send_main_menu_safe(update, context):
 async def handle_list_produk(update, context):
     query = update.callback_query
     produk = load_json(produk_file)
+
     msg = "*LIST PRODUK*\n"
     keyboard = []
 
     for pid, item in produk.items():
         harga = item.get("harga", 0)
-        msg += f"{pid} {item['nama']} - Rp{harga:,}\n"
+        msg += f"{pid}. {item['nama']} - Rp{harga:,}\n"
 
-        # cek stok berdasarkan akun_list atau stok
-        if item.get("akun_list") and len(item["akun_list"]) > 0:
-            keyboard.append([KeyboardButton(pid)])
-        elif item.get("stok", 0) > 0:
-            keyboard.append([KeyboardButton(pid)])
+        # cek stok
+        if (item.get("akun_list") and len(item["akun_list"]) > 0) or item.get("stok", 0) > 0:
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"{pid}. {item['nama']}",
+                    callback_data=f"produk_{pid}"
+                )
+            ])
         else:
-            keyboard.append([KeyboardButton(f"{pid} SOLDOUT ❌")])
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"{pid}. SOLD OUT ❌",
+                    callback_data="sold_out"
+                )
+            ])
 
-    # tombol kembali
-    keyboard.append([KeyboardButton("🔙 Kembali")])
+    keyboard.append([
+        InlineKeyboardButton("🔙 Kembali", callback_data="back_menu")
+    ])
 
-    reply_keyboard = ReplyKeyboardMarkup(
-        keyboard, resize_keyboard=True, one_time_keyboard=True
-    )
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await query.message.delete()
-    await context.bot.send_message(
-        chat_id=query.from_user.id,
-        text=msg + "\nSilahkan pilih Nomor produk yang ingin dibeli.",
-        reply_markup=reply_keyboard,
+    await query.edit_message_text(
+        text=msg + "\nSilahkan pilih produk yang ingin dibeli.",
+        reply_markup=reply_markup,
         parse_mode="Markdown"
     )
 # ===== HANDLE ORDER LANGSUNG =====
@@ -785,6 +791,7 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
 
 if __name__ == "__main__":
     main()
+
 
 
 
