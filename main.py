@@ -505,12 +505,14 @@ async def handle_qty_minus(update, context): # HANDLE QTY MINUS
     await query.edit_message_text(text, reply_markup=keyboard)
 
 
-async def handle_confirm_order(update, context): # HANDLE CONFIRM ORDER
+async def handle_confirm_order(update, context):
     query = update.callback_query
     uid = str(query.from_user.id)
+
     produk = load_json(produk_file)
     saldo = load_json(saldo_file)
     info = context.user_data.get("konfirmasi")
+
     if not info:
         await query.answer("❌ Data pesanan tidak ditemukan", show_alert=True)
         return
@@ -518,6 +520,7 @@ async def handle_confirm_order(update, context): # HANDLE CONFIRM ORDER
     produk_id = info["produk_id"]
     jumlah = info["jumlah"]
     item = produk.get(produk_id)
+
     if not item:
         await query.edit_message_text("❌ Produk tidak ditemukan.")
         return
@@ -537,21 +540,23 @@ async def handle_confirm_order(update, context): # HANDLE CONFIRM ORDER
         )
         return
 
+    # ✅ CEK STOK (INDENT BENAR)
     stok = len(item.get("akun_list", []))
+    if stok < jumlah:
+        await query.edit_message_text("❌ Stok atau akun tidak mencukupi.")
+        return
 
-if stok < jumlah:
-    await query.edit_message_text("❌ Stok atau akun tidak mencukupi.")
-    return
-
+    # ✅ PROSES PEMBELIAN
     saldo[uid] -= total
-    item["stok"] -= jumlah
     akun_terpakai = [item["akun_list"].pop(0) for _ in range(jumlah)]
+
     save_json(saldo_file, saldo)
     save_json(produk_file, produk)
     add_riwayat(uid, "BELI", f"{item['nama']} x{jumlah}", total)
 
     os.makedirs("akun_dikirim", exist_ok=True)
     file_path = f"akun_dikirim/{uid}_{produk_id}_x{jumlah}.txt"
+
     with open(file_path, "w") as f:
         for i, akun in enumerate(akun_terpakai, start=1):
             f.write(
@@ -571,18 +576,17 @@ if stok < jumlah:
         )
 
     await send_logs(
-    context, 
-    f"📦 TRANSAKSI BARU\n"
-    f"User: {query.from_user.full_name}\n"
-    f"ID: {uid}\n"
-    f"Produk: {item['nama']} x{jumlah}\n"
-    f"Total: Rp{total:,}\n"
-    f"Sisa Saldo: Rp{saldo[uid]:,}"
-)
-    
+        context,
+        f"📦 TRANSAKSI BARU\n"
+        f"User: {query.from_user.full_name}\n"
+        f"ID: {uid}\n"
+        f"Produk: {item['nama']} x{jumlah}\n"
+        f"Total: Rp{total:,}\n"
+        f"Sisa Saldo: Rp{saldo[uid]:,}"
+    )
+
     context.user_data.pop("konfirmasi", None)
     await send_main_menu(context, query.from_user.id, query.from_user)
-
 async def handle_back(update, context): # HANDLE BACK
     query = update.callback_query
     await query.edit_message_caption("✅ Dibatalkan.")
@@ -812,6 +816,7 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
 
 if __name__ == "__main__":
     main()
+
 
 
 
