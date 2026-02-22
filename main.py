@@ -644,11 +644,18 @@ async def button_callback(update: Update, context: CallbackContext):
     await query.answer()
     data = query.data
 
-    # ✅ TAMBAH INI
     if data.startswith("produk_"):
         pid = data.split("_")[1]
         await handle_produk_detail(update, context, pid)
-
+        
+    elif data == "qty_plus":
+        await handle_qty_plus(update, context)
+    elif data == "qty_minus":
+        await handle_qty_minus(update, context)
+    elif data == "confirm_order":
+        await handle_confirm_order(update, context)
+    elif data == "back_to_produk":
+        await send_produk(update, context)
     elif data == "direct_order":
         await handle_direct_order(update, context)
     elif data.startswith("deposit_"):
@@ -663,8 +670,8 @@ async def button_callback(update: Update, context: CallbackContext):
         await callback_handlers[data](update, context)
 
     else:
-        await query.edit_message_text("❌ Aksi tidak dikenali.")
-# ✅ HARUS PALING KIRI (tidak ada spasi)
+        await query.answer("Aksi tidak dikenali", show_alert=True)
+
 async def start(update: Update, context: CallbackContext):
     user = update.effective_user
     await send_main_menu(context, update.effective_chat.id, user)
@@ -810,6 +817,7 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
 
 if __name__ == "__main__":
     main()
+
 
 
 
