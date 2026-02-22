@@ -228,33 +228,29 @@ async def handle_cek_stok(update, context):  # HANDLE CEK STOK
         parse_mode="Markdown"
     )
         
-async def handle_produk_detail(update, context):  # HANDLE PRODUK DETAIL
+async def handle_produk_detail(update, context, pid):  # HANDLE PRODUK DETAIL
     query = update.callback_query
-    data = query.data
-
     produk = load_json(produk_file)
 
-    # 🔥 FIX AMBIL ID PRODUK
-    produk_id = data.replace("produk_", "")
-    item = produk.get(produk_id)
+    # ✅ pakai pid langsung
+    item = produk.get(pid)
 
-    # kalau produk gak ketemu
     if not item:
         await query.answer("Produk tidak ditemukan!", show_alert=True)
         return
 
     # cek stok
-    if len(item.get("akun_list", [])) <= 0:
+    stok = len(item.get("akun_list", []))
+    if stok <= 0:
         await query.answer("Produk habis", show_alert=True)
         return
 
     harga = item.get("harga", 0)
     tipe = item.get("akun_list", [{}])[0].get("tipe", "-")
-    stok = len(item.get("akun_list", []))
 
-    # 🔥 FIX SIMPAN PRODUK_ID YANG SUDAH DIPISAH
+    # ✅ simpan pid langsung
     context.user_data["konfirmasi"] = {
-        "produk_id": produk_id,
+        "produk_id": pid,
         "jumlah": 1
     }
 
@@ -281,12 +277,10 @@ async def handle_produk_detail(update, context):  # HANDLE PRODUK DETAIL
         [InlineKeyboardButton("🔙 Kembali", callback_data="back_to_produk")]
     ])
 
-    await query.message.delete()
-    await context.bot.send_message(
-        chat_id=query.from_user.id,
+    await query.edit_message_text(
         text=text,
         reply_markup=keyboard
-            )
+    )
     
 async def handle_deposit(update, context):  # HANDLE DEPOSIT
     query = update.callback_query
@@ -816,6 +810,7 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
 
 if __name__ == "__main__":
     main()
+
 
 
 
