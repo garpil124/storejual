@@ -537,9 +537,11 @@ async def handle_confirm_order(update, context): # HANDLE CONFIRM ORDER
         )
         return
 
-    if item["stok"] < jumlah or len(item["akun_list"]) < jumlah:
-        await query.edit_message_text("❌ Stok atau akun tidak mencukupi.")
-        return
+    stok = len(item.get("akun_list", []))
+
+if stok < jumlah:
+    await query.edit_message_text("❌ Stok atau akun tidak mencukupi.")
+    return
 
     saldo[uid] -= total
     item["stok"] -= jumlah
@@ -810,6 +812,7 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
 
 if __name__ == "__main__":
     main()
+
 
 
 
