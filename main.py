@@ -689,52 +689,79 @@ async def start(update: Update, context: CallbackContext):
     await send_main_menu(context, update.effective_chat.id, user)
     
 async def handle_text(update: Update, context: CallbackContext):
+async def handle_text(update: Update, context: CallbackContext):
     text = update.message.text.strip()
-
-    if "SOLDOUT" in text:
-        text = text.split()[0]
-
     uid = str(update.effective_user.id)
 
+    # ==============================
+    # BATALKAN DEPOSIT
+    # ==============================
     if text == "❌ Batalkan Deposit":
         pending = load_json(deposit_file)
         pending = [p for p in pending if str(p["user_id"]) != uid]
         save_json(deposit_file, pending)
-        await update.message.reply_text("✅ Deposit kamu telah dibatalkan.", reply_markup=ReplyKeyboardRemove())
+
+        await update.message.reply_text(
+            "✅ Deposit kamu telah dibatalkan.",
+            reply_markup=ReplyKeyboardRemove()
+        )
         await send_main_menu_safe(update, context)
         return
 
+    # ==============================
+    # INPUT NOMINAL CUSTOM
+    # ==============================
     if context.user_data.get("awaiting_custom"):
         try:
             nominal = int(text)
+
             context.user_data["awaiting_custom"] = False
             context.user_data["nominal_asli"] = nominal
             context.user_data["total_transfer"] = nominal + 23
+
             reply_keyboard = ReplyKeyboardMarkup(
                 [[KeyboardButton("❌ Batalkan Deposit")]],
-                resize_keyboard=True, one_time_keyboard=True
+                resize_keyboard=True,
+                one_time_keyboard=True
             )
+
             await update.message.reply_text(
                 f"💳 Transfer *Rp{nominal + 23:,}* ke:\n"
-                "`DANA 0812-XXXX-XXXX a.n. Store garfield`\nSetelah transfer, kirim bukti foto transfer ke bot ini.",
+                "`DANA 0812-XXXX-XXXX a.n. Store garfield`\n\n"
+                "Setelah transfer, kirim bukti foto ke bot ini.",
                 parse_mode="Markdown",
                 reply_markup=reply_keyboard
             )
-        except:
-            await update.message.reply_text("❌ Format salah, hanya bisa mengirim foto.")
+
+        except ValueError:
+            await update.message.reply_text(
+                "❌ Masukkan nominal berupa angka ya."
+            )
         return
 
+    # ==============================
+    # HANDLE PRODUK
+    # ==============================
     produk = load_json(produk_file)
+
     if text in produk:
         item = produk[text]
-        if item["stok"] <= 0:
-            await update.message.reply_text("❌ Produk ini tidak bisa dibeli karena stok habis.")
+
+        akun_list = item.get("akun_list", [])
+        ready_akun = [a for a in akun_list if a.get("status") == "ready"]
+
+        # Kalau stok habis
+        if not ready_akun:
+            await update.message.reply_text(
+                "❌ Produk ini tidak bisa dibeli karena stok habis."
+            )
             await send_main_menu_safe(update, context)
             return
 
-        harga = item["harga"]
-        tipe = item["akun_list"][0]["tipe"] if item["akun_list"] else "-"
-        stok = item["stok"]
+        # Ambil harga & variasi dari akun pertama yang ready
+        harga = ready_akun[0].get("harga", 0)
+        tipe = ready_akun[0].get("id", "-")
+        stok = len(ready_akun)
 
         context.user_data["konfirmasi"] = {
             "produk_id": text,
@@ -763,13 +790,21 @@ async def handle_text(update: Update, context: CallbackContext):
             [InlineKeyboardButton("Konfirmasi Order ✅", callback_data="confirm_order")],
             [InlineKeyboardButton("🔙 Kembali", callback_data="back_to_produk")]
         ])
-        await update.message.reply_text(konfirmasi_text, reply_markup=keyboard)
+
+        await update.message.reply_text(
+            konfirmasi_text,
+            reply_markup=keyboard
+        )
         return
 
+    # ==============================
+    # KEMBALI KE MENU
+    # ==============================
     if text == "🔙 Kembali":
         await send_main_menu_safe(update, context)
         return
 
+    # Default fallback
     await send_main_menu_safe(update, context)
 
 async def handle_photo(update: Update, context: CallbackContext):
@@ -817,6 +852,7 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
 
 if __name__ == "__main__":
     main()
+
 
 
 
