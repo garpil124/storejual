@@ -501,6 +501,8 @@ async def handle_qty_minus(update, context): # HANDLE QTY MINUS
 
 async def handle_confirm_order(update, context):
     query = update.callback_query
+    await query.answer()
+
     uid = str(query.from_user.id)
 
     produk = load_json(produk_file)
@@ -513,59 +515,75 @@ async def handle_confirm_order(update, context):
 
     produk_id = info["produk_id"]
     jumlah = info["jumlah"]
-    item = produk.get(produk_id)
 
+    item = produk.get(produk_id)
     if not item:
         await query.edit_message_text("❌ Produk tidak ditemukan.")
         return
 
-    total = jumlah * item["harga"]
+    akun_list = item.get("akun_list", [])
+    ready_akun = [a for a in akun_list if a.get("status") == "ready"]
+
+    if len(ready_akun) < jumlah:
+        await query.edit_message_text("❌ Stok akun tidak mencukupi.")
+        return
+
+    harga = ready_akun[0]["harga"]
+    total = harga * jumlah
 
     if saldo.get(uid, 0) < total:
         keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton("💰 Deposit Saldo", callback_data="deposit")],
-            [InlineKeyboardButton("🔙 Kembali ke Menu", callback_data="back_to_produk")]
+            [InlineKeyboardButton("🔙 Kembali", callback_data="back_to_produk")]
         ])
         await query.edit_message_text(
-            "❌ *Saldo kamu tidak cukup untuk menyelesaikan pesanan.*\n"
-            "Silakan deposit saldo terlebih dahulu atau kembali ke menu utama.",
+            "❌ *Saldo kamu tidak cukup.*\nSilakan deposit terlebih dahulu.",
             reply_markup=keyboard,
             parse_mode="Markdown"
         )
         return
 
-    # ✅ CEK STOK (INDENT BENAR)
-    stok = len(item.get("akun_list", []))
-    if stok < jumlah:
-        await query.edit_message_text("❌ Stok atau akun tidak mencukupi.")
-        return
+    # =============================
+    # PROSES PEMBELIAN
+    # =============================
 
-    # ✅ PROSES PEMBELIAN
     saldo[uid] -= total
-    akun_terpakai = [item["akun_list"].pop(0) for _ in range(jumlah)]
+    akun_terkirim = ready_akun[:jumlah]
+
+    # Ubah status jadi sold
+    for akun in akun_terkirim:
+        akun["status"] = "sold"
 
     save_json(saldo_file, saldo)
     save_json(produk_file, produk)
     add_riwayat(uid, "BELI", f"{item['nama']} x{jumlah}", total)
 
+    # =============================
+    # BUAT FILE AKUN
+    # =============================
+
     os.makedirs("akun_dikirim", exist_ok=True)
     file_path = f"akun_dikirim/{uid}_{produk_id}_x{jumlah}.txt"
 
     with open(file_path, "w") as f:
-        for i, akun in enumerate(akun_terpakai, start=1):
+        for i, akun in enumerate(akun_terkirim, start=1):
             f.write(
                 f"Akun #{i}\n"
-                f"Username: {akun['username']}\n"
-                f"Password: {akun['password']}\n"
-                f"Tipe: {akun['tipe']}\n"
+                f"Nomor: {akun.get('nomor')}\n"
+                f"ID: {akun.get('id')}\n"
+                f"Password: {akun.get('password')}\n"
                 "---------------------------\n"
             )
 
     with open(file_path, "rb") as f:
         await context.bot.send_document(
             chat_id=query.from_user.id,
-            document=InputFile(f, filename=os.path.basename(file_path)),
-            caption=f"📦 Pembelian *{item['nama']}* x{jumlah} berhasil!\nSisa saldo: Rp{saldo[uid]:,}",
+            document=InputFile(f),
+            caption=(
+                f"📦 Pembelian *{item['nama']}* x{jumlah} berhasil!\n"
+                f"Total: Rp{total:,}\n"
+                f"Sisa saldo: Rp{saldo[uid]:,}"
+            ),
             parse_mode="Markdown"
         )
 
@@ -581,16 +599,6 @@ async def handle_confirm_order(update, context):
 
     context.user_data.pop("konfirmasi", None)
     await send_main_menu(context, query.from_user.id, query.from_user)
-async def handle_back(update, context): # HANDLE BACK
-    query = update.callback_query
-    await query.edit_message_caption("✅ Dibatalkan.")
-
-
-async def handle_back_to_produk(update, context): # HANDLE BACK TO PRODUK
-    query = update.callback_query
-    await query.message.delete()
-    await send_main_menu(context, query.from_user.id, query.from_user)
-
 
 async def handle_info_bot(update, context):  # HANDLE INFO BOT
     query = update.callback_query
@@ -688,7 +696,6 @@ async def start(update: Update, context: CallbackContext):
     # Kirim main menu ke user
     await send_main_menu(context, update.effective_chat.id, user)
     
-async def handle_text(update: Update, context: CallbackContext):
 async def handle_text(update: Update, context: CallbackContext):
     text = update.message.text.strip()
     uid = str(update.effective_user.id)
@@ -852,6 +859,7 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
 
 if __name__ == "__main__":
     main()
+
 
 
 
