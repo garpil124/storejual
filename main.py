@@ -858,20 +858,21 @@ def main(): # Made With love by @govtrashit A.K.A RzkyO
     app.add_handler(CommandHandler("start", start))
 
 # Handler khusus tombol
-app.add_handler(CallbackQueryHandler(handle_confirm_order, pattern="^confirm_order$"))
-app.add_handler(CallbackQueryHandler(handle_qty_plus, pattern="^qty_plus$"))
-app.add_handler(CallbackQueryHandler(handle_qty_minus, pattern="^qty_minus$"))
-app.add_handler(CallbackQueryHandler(handle_back, pattern="^back_to_produk$"))
+    app.add_handler(CallbackQueryHandler(handle_confirm_order, pattern="^confirm_order$"))
+    app.add_handler(CallbackQueryHandler(handle_qty_plus, pattern="^qty_plus$"))
+    app.add_handler(CallbackQueryHandler(handle_qty_minus, pattern="^qty_minus$"))
+    app.add_handler(CallbackQueryHandler(handle_back, pattern="^back_to_produk$"))
 
-# Handler umum (taruh paling bawah)
-app.add_handler(CallbackQueryHandler(button_callback))
+    # Handler umum (paling bawah)
+    app.add_handler(CallbackQueryHandler(button_callback))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    app.run_polling()
 
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 
-app.run_polling()
 if __name__ == "__main__":
     main()
+
 
 
 
