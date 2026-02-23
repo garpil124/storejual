@@ -647,7 +647,6 @@ callback_handlers = {
     "qty_minus": handle_qty_minus,
     "confirm_order": handle_confirm_order,
     "back": handle_back,
-    "back_to_produk": handle_back_to_produk,
     "ignore": handle_ignore,
     "direct_order": handle_direct_order
 }
@@ -873,6 +872,7 @@ app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 app.run_polling()
 if __name__ == "__main__":
     main()
+
 
 
 
