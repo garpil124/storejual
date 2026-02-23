@@ -8,6 +8,11 @@ from telegram.ext import (
     Application, CommandHandler, MessageHandler,
     CallbackQueryHandler, filters, CallbackContext
 )
+# ===== HANDLE BACK =====
+async def handle_back(update, context):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text("✅ Dibatalkan.")
 from datetime import datetime
 
 OWNER_ID = 8209644174
@@ -868,6 +873,7 @@ app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 app.run_polling()
 if __name__ == "__main__":
     main()
+
 
 
 
