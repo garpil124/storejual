@@ -814,6 +814,11 @@ async def handle_text(update: Update, context: CallbackContext):
     # Default fallback
     await send_main_menu_safe(update, context)
 
+async def handle_back(update, context):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text("✅ Dibatalkan.")
+    
 async def handle_photo(update: Update, context: CallbackContext):
     user = update.effective_user
     photo = update.message.photo[-1]
@@ -868,6 +873,7 @@ app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 app.run_polling()
 if __name__ == "__main__":
     main()
+
 
 
 
